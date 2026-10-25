@@ -1,0 +1,67 @@
+### Este archivo usa la extensión "REST Client" de VS Code (humao.rest-client).
+### La app debe estar corriendo en el puerto 8080.
+### Los datos se guardan solo en memoria: al reiniciar la app vuelven a los 2 iniciales.
+
+@baseUrl = http://localhost:8080
+
+### Listar todas las solicitudes
+GET {{baseUrl}}/api/solicitudes
+Accept: application/json
+
+### Obtener una solicitud por id
+GET {{baseUrl}}/api/solicitudes/1
+Accept: application/json
+
+### Crear una solicitud (prioridad y estado se completan con valores por defecto)
+# @name crearSolicitud
+POST {{baseUrl}}/api/solicitudes
+Content-Type: application/json
+
+{
+  "titulo": "No enciende el monitor",
+  "prioridad": "Alta"
+}
+
+client.test("201 Created", () => {
+  client.expect(response.status).toBe(201);
+  client.expect(response.body.estado).toBe("Pendiente");
+  client.expect(response.body.prioridad).toBe("Alta");
+});
+
+### Crear una solicitud con todos los campos
+POST {{baseUrl}}/api/solicitudes
+Content-Type: application/json
+
+{
+  "titulo": "Instalar Office en el equipo nuevo",
+  "prioridad": "Media",
+  "estado": "En proceso"
+}
+
+### Crear una solicitud sin título -> debe responder 400
+POST {{baseUrl}}/api/solicitudes
+Content-Type: application/json
+
+{
+  "prioridad": "Baja"
+}
+
+client.test("400 Bad Request", () => {
+  client.expect(response.status).toBe(400);
+  client.expect(response.body.error).toBe("El título es obligatorio");
+});
+
+### Obtener la solicitud creada en el primer POST (reutiliza su id)
+GET {{baseUrl}}/api/solicitudes/{{crearSolicitud.response.body.id}}
+Accept: application/json
+
+### Obtener una solicitud inexistente -> debe responder 404
+GET {{baseUrl}}/api/solicitudes/999999
+Accept: application/json
+
+### Eliminar la solicitud creada en el primer POST
+DELETE {{baseUrl}}/api/solicitudes/{{crearSolicitud.response.body.id}}
+
+### Verificar que ya no existe -> debe responder 404
+GET {{baseUrl}}/api/solicitudes/{{crearSolicitud.response.body.id}}
+Accept: application/json
